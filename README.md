@@ -1,5 +1,6 @@
 # Minox-Resources
 ![Picture of Minox Camera and cassettes](/images/Minox%20Camera.jpg)
+
 Resources and links to help you make pictures with a Minox camera.
 ## Minox Cameras
 The Minox A and Minox B cameras were made for a long time and there are quite a few about. Both of them use essentially the same lens and shutter, but the B has a built-in meter you can use to set the exposure of your pictures. There is also a Minox C but this requires a battery which can be hard to get hold of. 
