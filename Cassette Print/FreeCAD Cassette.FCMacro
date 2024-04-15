@@ -1,0 +1,161 @@
+import FreeCAD as App
+import Part
+import Mesh
+from FreeCAD import Base
+
+# Create a new document or use the active one
+doc = App.activeDocument() if App.activeDocument() else App.newDocument()
+
+# Example: Creating a box part
+
+holeRadius = 4.9
+baseHeight = 0.486
+baseXShift = -27.245
+baseYShift = 0
+baseZShift = 9.765
+baseRadius = 8.55
+wallThickness = 0.25
+wallHeight=2.8
+innerWallHeight = 2.3
+
+exitBlockWidth=6.2
+exitBlockDepth=2.75
+
+filmBlockWidth=10.0
+filmBlockDepth=1.2
+
+# Shift the centre of the mode to match the example
+# This is the centre for all cylinders made as part of the top
+centreShift = Base.Vector(baseXShift,baseYShift,baseZShift)
+# Move up so that we build the block downwards 
+blockShift = Base.Vector(baseXShift,baseYShift,baseZShift-wallHeight+baseHeight) 
+# Make the outer block for the top part
+block = Part.makeCylinder(baseRadius,wallHeight,blockShift)
+# Now cut a cylinder out to leave the top rim - this is where it starts
+cutShift = Base.Vector(baseXShift,baseYShift,baseZShift-wallHeight) 
+# Inner cut has smaller radius and is lifted up the hight of the base
+innerCut = Part.makeCylinder(baseRadius-wallThickness,wallHeight,cutShift)
+# Create the lid by cutting the inner from the outer block
+lid = block.cut(innerCut)
+# Now we need to make the inner rim for the hole where the drive shaft goes through
+# Hole radius is the size of this hole
+innerBlockRadius = holeRadius+wallThickness
+# Create the inner block
+# Not that this has  different height because the inner rim is a different height from the outer one
+innerBlock = Part.makeCylinder(innerBlockRadius,innerWallHeight,blockShift)
+# Fuse it with the lid to create a solid block
+lid = lid.fuse(innerBlock)
+# Now we cut another cylinder from this block to leave just the rim
+# Also drop the cutting cylinder so that it cuts a hole in the base of the lid
+cutShift = Base.Vector(baseXShift,baseYShift,baseZShift-innerWallHeight-1)
+# Make the cutting cylinder  
+innerCut = Part.makeCylinder(holeRadius,innerWallHeight+baseHeight+2,cutShift)
+# Cut the inner hole to make the inner rim and a hole for the drive shaft
+lid=lid.cut(innerCut)
+
+###### Left Lid
+# Now we need to create the runout for the film
+# Start by fusing a block to make the outer structure
+# Positioned along the outer rim to line up with it
+exitBlockShift = Base.Vector(baseXShift,baseRadius-exitBlockDepth,baseZShift-wallHeight+baseHeight) 
+# Make the exit block
+exitBlock = Part.makeBox(exitBlockWidth, exitBlockDepth, wallHeight,exitBlockShift)
+# Add the block to the lid
+leftLid = lid.fuse(exitBlock)
+# Now going to cut the inside out of the block to leave the outer parts of the rim
+# Position the cutting block
+exitBlockCutShift = Base.Vector(baseXShift-wallThickness,baseRadius-exitBlockDepth,baseZShift-wallHeight) 
+# Create the cutting block
+exitBlockCut = Part.makeBox(exitBlockWidth, exitBlockDepth-wallThickness, wallHeight,exitBlockCutShift)
+# Cut the block from the lid
+leftLid = leftLid.cut(exitBlockCut)
+
+# Now one final block cut for the hole the film comes out of
+# Place this aligned with the block rim
+filmCutShift = Base.Vector(baseXShift-wallThickness,baseRadius-filmBlockDepth,baseZShift-wallHeight) 
+# Create the cutting block
+filmBlockCut = Part.makeBox(filmBlockWidth, filmBlockDepth-wallThickness, wallHeight,filmCutShift)
+# Cut the slot
+leftLid = leftLid.cut(filmBlockCut)
+
+###### Right Lid
+
+# Now we need to create the runout for the film
+# Start by fusing a block to make the outer structure
+# Positioned along the outer rim to line up with it
+exitBlockShift = Base.Vector(baseXShift-exitBlockWidth,baseRadius-exitBlockDepth,baseZShift-wallHeight+baseHeight) 
+# Make the exit block
+exitBlock = Part.makeBox(exitBlockWidth, exitBlockDepth, wallHeight,exitBlockShift)
+# Add the block to the lid
+rightLid = lid.fuse(exitBlock)
+# Now going to cut the inside out of the block to leave the outer parts of the rim
+# Position the cutting block
+exitBlockCutShift = Base.Vector(baseXShift-exitBlockWidth+wallThickness,baseRadius-exitBlockDepth,baseZShift-wallHeight) 
+# Create the cutting block
+exitBlockCut = Part.makeBox(exitBlockWidth, exitBlockDepth-wallThickness, wallHeight,exitBlockCutShift)
+# Cut the block from the lid
+rightLid = rightLid.cut(exitBlockCut)
+
+# Now one final block cut for the hole the film comes out of
+# Place this aligned with the block rim
+filmCutShift = Base.Vector(baseXShift-wallThickness-2*exitBlockWidth,baseRadius-filmBlockDepth,baseZShift-wallHeight) 
+# Create the cutting block
+filmBlockCut = Part.makeBox(filmBlockWidth, filmBlockDepth-wallThickness, wallHeight,filmCutShift)
+# Cut the slot
+rightLid = rightLid.cut(filmBlockCut)
+
+leftLid.translate(Base.Vector(0,0,20))
+
+Part.show(leftLid)
+
+rightLid.translate(Base.Vector(0,0,40))
+
+Part.show(rightLid)
+
+
+# Now create the takeup spool
+
+takeupHeight = 8.97
+takeupWallThickness = 0.4
+takeupBaseHeight = 0.2
+# This is the clearnce between the bottom part of the takeup and the rim in the lid
+takeupGap = 0.15
+# Calculate the radius of the block - based on the size of the hole in the lid and alowing for the wall thickness and 
+takeupRadius = innerBlockRadius + takeupGap + takeupWallThickness
+takeupCutRadius = innerBlockRadius + takeupGap
+
+takeupShift = Base.Vector(baseXShift,baseYShift,baseZShift) 
+
+takeupSpool = Part.makeCylinder(takeupRadius,takeupHeight,takeupShift)
+centreShift = Base.Vector(baseXShift,baseYShift,baseZShift) 
+
+takeupCutShift = Base.Vector(baseXShift,baseYShift,baseZShift - takeupBaseHeight) 
+takeupSpoolCut = Part.makeCylinder(takeupCutRadius,takeupHeight,takeupCutShift)
+takeupSpool=takeupSpool.cut(takeupSpoolCut)
+
+takeupPinHeight=3.0
+takeupPinDepth=2.0
+takeupPinWidth=2.0
+
+takeupPinX = baseXShift+takeupCutRadius-takeupPinWidth
+takeupPinY = baseYShift - (takeupPinDepth/2.0)
+takeupPinZ = baseZShift + takeupHeight - takeupPinHeight - takeupBaseHeight
+
+takeupPinPos =  Base.Vector(takeupPinX, takeupPinY, takeupPinZ) 
+takeupPin = Part.makeBox(takeupPinWidth,takeupPinDepth, takeupPinHeight, takeupPinPos)
+
+takeupSpool = takeupSpool.fuse(takeupPin)
+takeupSpool.rotate(takeupShift,Base.Vector(0,0,1),120)
+takeupSpool = takeupSpool.fuse(takeupPin)
+
+takeupSpool.rotate(takeupShift,Base.Vector(0,0,1),120)
+takeupSpool = takeupSpool.fuse(takeupPin)
+
+takeupSpool.translate(Base.Vector(0,0,60))
+
+
+Part.show(takeupSpool)
+
+
+#Gui.SendMsgToActiveView("ViewFit")
+#Gui.activeDocument().activeView().viewAxometric()
