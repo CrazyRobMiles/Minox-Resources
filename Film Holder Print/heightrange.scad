@@ -138,10 +138,11 @@ module filmHolder(inOffset, inNoOfHolders){
     }
 }
 
+
 //testFilmHolder(2,100);
-
-filmHolder(0,4);
-
-translate([0,100,0]){
-    holderLid();
+//translate([0,100,0]){
+//    holderLid();
 }
+
+filmHolder(0.2,4);
+
